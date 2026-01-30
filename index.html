@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- ZOOM DISABLED -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCOREX TIPS</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Ionicons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        /* --- GLOBAL & FONTS --- */
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@400;900&display=swap");
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #000080; 
+            color: white;
+            user-select: none; -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        /* --- SPLASH SCREEN STYLES --- */
+        .splash {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; background: #000;
+            z-index: 9999; transition: opacity 0.5s ease;
+        }
+        .logo { display: flex; perspective: 1400px; }
+        .char {
+            position: relative; font-family: 'Inter', sans-serif; font-size: 58px; font-weight: 900; letter-spacing: 4px;
+            background: linear-gradient(135deg,#1e90ff,#00c6ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            opacity: 0; transform: translateY(-200vh) rotateX(55deg) scale(0.8);
+            animation: letterDrop 1s cubic-bezier(.19,1,.22,1) forwards;
+        }
+        .char::after {
+            content: attr(data-char); position: absolute; left: 0; top: 0;
+            background: linear-gradient(135deg,#00c6ff,#1e90ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            opacity: .28; transform: translateZ(-50px);
+        }
+        .tagline {
+            margin-top: 22px; font-size: 10px; letter-spacing: 2px; color: #7dd3fc;
+            opacity: 0; animation: fadeUp .8s ease forwards; animation-delay: 1.2s; font-family: 'Inter', sans-serif;
+        }
+        .loading-dots { position: absolute; bottom: 16%; display: flex; gap: 8px; }
+        .dot { width: 7px; height: 7px; background: #1e90ff; border-radius: 50%; opacity: .25; animation: pulse 1.3s infinite ease-in-out; }
+        .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+        .splash.hide { animation: splashOut .9s ease forwards; pointer-events: none; }
+        @keyframes letterDrop { to { opacity:1; transform:translateY(0) rotateX(0) scale(1); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
+        @keyframes splashOut { to { opacity:0; transform:scale(1.15); } }
+
+
+        /* --- AUTH STYLES --- */
+        #auth-view {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none;
+            justify-content: center; align-items: center; background: #151f28; z-index: 2000; overflow-y: auto; padding: 20px;
+        }
+        .login-box {
+            position: relative; width: 400px; min-height: 450px; background: #191919; border-radius: 20px; display: flex;
+            justify-content: center; align-items: center; padding: 40px; transition: 0.3s ease;
+        }
+        .login-box.light-on h2 { color: #006aff; text-shadow: 0 0 10px #006aff; }
+        .login-box h2 { font-size: 2em; color: #fff; text-align: center; margin-bottom: 20px; transition: 0.5s; }
+        .input-box { position: relative; width: 100%; margin: 30px 0; }
+        .input-box .input-line { position: absolute; bottom: -2px; left: 0; width: 100%; height: 2.5px; background: #fff; transition: 0.5s ease; }
+        .input-box label { position: absolute; top: 50%; left: 5px; transform: translateY(-50%); font-size: 1em; color: #fff; pointer-events: none; transition: 0.5s; }
+        .input-box input:focus ~ label, .input-box input:valid ~ label { top: -5px; }
+        .input-box input { width: 100%; height: 50px; background: transparent; border: none; outline: none; font-size: 1em; color: #fff; padding: 0 35px 0 5px; transition: 0.5s; }
+        .input-box .icon { position: absolute; right: 8px; font-size: 1.2em; line-height: 57px; color: #fff; transition: 0.5s; }
+        .login-box.light-on .input-box .input-line { background: #006aff; box-shadow: 0 0 10px #006aff; }
+        .login-box.light-on .input-box label { color: #006aff; text-shadow: 0 0 10px #006aff; }
+        .login-box.light-on .input-box input { color: #006aff; text-shadow: 0 0 5px #006aff; }
+        .login-box.light-on .input-box .icon { color: #006aff; filter: drop-shadow(0 0 5px #006aff); }
+        .login-box.light-on .remember-forgot { color: #006aff; text-shadow: 0 0 10px #006aff; }
+        .login-box.light-on .register-link a { color: #006aff; }
+        .login-box.light-on .auth-btn { background: #006aff; box-shadow: 0 0 15px #006aff; }
+        .login-box.light-on .checkbox-wrapper input:checked ~ .checkmark { background-color: #006aff; }
+        .remember-forgot { display: flex; justify-content: space-between; align-items: center; font-size: 0.75em; color: #fff; margin: -15px 0 15px; transition: 0.5s; }
+        .remember-forgot a { color: inherit; text-decoration: none; }
+        .checkbox-wrapper { display: flex; align-items: center; cursor: pointer; position: relative; }
+        .checkbox-wrapper input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .checkmark { position: relative; height: 15px; width: 15px; background: transparent; border: 2px solid #fff; border-radius: 3px; margin-right: 6px; transition: 0.3s; }
+        .checkbox-wrapper input:checked ~ .checkmark { background-color: #fff; box-shadow: 0 0 10px #fff; }
+        .checkmark:after { content: ""; position: absolute; display: none; left: 3px; top: 0px; width: 4px; height: 8px; border: solid #191919; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+        .checkbox-wrapper input:checked ~ .checkmark:after { display: block; }
+        .auth-btn { position: relative; width: 100%; height: 40px; background: #fff; border: none; border-radius: 40px; cursor: pointer; font-size: 1em; font-weight: 500; color: #191919; display: flex; justify-content: center; align-items: center; transition: 0.5s; }
+        .auth-btn.loading { color: transparent; pointer-events: none; }
+        .auth-btn.loading::after { content: ""; position: absolute; width: 20px; height: 20px; border: 3px solid rgba(25, 25, 25, 0.3); border-top-color: #191919; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .login-box.light-on .auth-btn.loading::after { border-color: rgba(255,255,255,0.3); border-top-color: #fff; }
+        .register-link { margin-top: 25px; font-size: 0.85em; text-align: center; color: #fff; transition: 0.5s; }
+        .register-link a { color: inherit; text-decoration: none; font-weight: 600; }
+        .error-msg { color: #ff3333; font-size: 12px; text-align: center; margin-top: 10px; display: none; font-weight: 500; }
+        .form-section { display: none; animation: fadeIn 0.5s ease; }
+        .form-section.active { display: block; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)} }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .glowing-light { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 500px; height: 10px; background: #006aff; border-radius: 20px; opacity: 0; transition: 0.5s ease; pointer-events: none; }
+        .login-box.light-on ~ .glowing-light { opacity: 1; box-shadow: 0 0 20px #006aff; }
+        .light { position: absolute; top: -200%; left: 0; width: 100%; height: 950px; background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) -50%, rgba(255, 255, 255, 0) 90%); clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); pointer-events: none; transition: 0.5s ease; z-index: 1; }
+        .login-box.light-on .light { top: -90%; }
+
+
+        /* --- APP UI STYLES --- */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%; height: 55px;
+            background-color: #000060; display: flex; align-items: center;
+            padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .menu-btn { font-size: 22px; cursor: pointer; color: white; z-index: 1001; }
+        .app-title {
+            position: absolute; left: 46%; transform: translateX(-50%); 
+            font-size: 18px; font-weight: bold; color: white; white-space: nowrap; pointer-events: none;
+        }
+
+        .sidebar {
+            position: fixed; top: 0; left: -260px; width: 260px; height: 100%;
+            background-color: #000050; box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+            transition: left 0.3s ease; z-index: 1100; display: flex; flex-direction: column;
+        }
+        .sidebar.active { left: 0; }
+        
+        /* UPDATED SIDEBAR HEADER */
+        .sidebar-header {
+            padding: 30px 20px; background-color: #000040;
+            border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .sidebar-header img {
+            width: 80px; height: 80px; border-radius: 50%;
+            object-fit: cover; margin-bottom: 10px;
+            border: 2px solid #ffcc00; /* Optional: border around logo */
+        }
+        
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-menu a { display: block; padding: 15px 20px; color: white; text-decoration: none; font-size: 14px; }
+        .sidebar-menu a i { margin-right: 10px; width: 20px; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1050; }
+        .overlay.active { display: block; }
+
+        .logout-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(5px);
+            z-index: 3000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
+        }
+        .logout-modal {
+            background: #151f28; padding: 25px; border-radius: 15px; width: 80%;
+            max-width: 300px; text-align: center; border: 1px solid #006aff;
+            box-shadow: 0 0 20px rgba(0, 106, 255, 0.3); transform: scale(0.8); animation: zoomIn 0.3s forwards;
+        }
+        .logout-modal h3 { margin: 0 0 10px; color: white; }
+        .logout-modal p { color: #ccc; font-size: 14px; margin-bottom: 20px; }
+        .logout-actions { display: flex; justify-content: center; gap: 15px; }
+        .logout-btn { padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; font-family: 'Poppins'; }
+        .btn-cancel { background: #333; color: white; }
+        .btn-confirm { background: #006aff; color: white; }
+        @keyframes zoomIn { to { transform: scale(1); } }
+
+        .main-content { margin-top: 60px; padding: 2px; }
+        .page-view { display: none; }
+        .page-view.active { display: block; animation: fadeIn 0.3s; }
+        
+        .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .home-btn {
+            background: linear-gradient(135deg, #0040ff, #002080);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 20px 10px;
+            text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .home-btn:active { transform: scale(0.95); }
+        .home-btn i { font-size: 28px; margin-bottom: 10px; color: #ffcc00; }
+        .home-btn span { display: block; font-weight: bold; font-size: 13px; }
+
+         /* TIPS TABLE */
+        .table-container { width: 98%; max-width: 800px; margin: 0px auto 5px auto; color: white; }
+        .table-container h6 { font-size: 11px; font-weight: bold; margin: 0; padding: 5px; text-align: center; background: transparent; border: 1px solid rgba(0, 0, 128, 0.2); border-bottom: none; border-radius: 5px 5px 0 0; }
+        table { width: 100%; border-collapse: collapse; background-color: #0040ff; border-radius: 0 0 5px 5px; }
+        th, td { padding: 2px 1px; font-size: 11px; text-align: center; border: 1px solid rgba(0, 0, 128, 0.2); white-space: nowrap; }
+        th { background-color: #0000FE; color: white; font-size: 11px; text-transform: uppercase; }
+        tr { background-color: #0040ff; }
+        .status-lost { font-size: 12px; font-weight: bold; color: white; }
+        .privacy-content h3 { color: #ffcc00; border-bottom: 1px solid #ffcc00; padding-bottom: 5px; margin-top: 20px; }
+        .privacy-content p { margin-bottom: 10px; text-align: justify; }
+
+        .total-row { background-color: blue; font-weight: bold; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+        .total-label { text-align: center; padding-right: 10px; color: #ffcc00; text-transform: uppercase; font-size: 10px; }
+        .total-row td { padding: 0px !important; height: 15px; line-height: 20px; }
+        .total-value { text-align: center; color: #ffffff; font-size: 11.3px; letter-spacing: 1px; border-right: 1px solid rgba(255,255,255,0.1); }
+        .total-ft { text-align: center; font-size: 12px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH SCREEN -->
+    <div class="splash" id="splash">
+        <div class="logo">
+          <span class="char" data-char="S" style="animation-delay:0.2s">S</span>
+          <span class="char" data-char="C" style="animation-delay:0.35s">C</span>
+          <span class="char" data-char="O" style="animation-delay:0.5s">O</span>
+          <span class="char" data-char="R" style="animation-delay:0.65s">R</span>
+          <span class="char" data-char="E" style="animation-delay:0.8s">E</span>
+          <span class="char" data-char="-" style="animation-delay:0.95s">-</span>
+          <span class="char" data-char="X" style="animation-delay:1.1s">X</span>
+        </div>
+        <div class="tagline">SMART • FOOTBALL • FIXING </div>
+        <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+
+    <!-- AUTHENTICATION VIEW -->
+    <div id="auth-view">
+        <div class="glowing-light"></div>
+        <div class="login-box" id="main-box">
+            <div class="light"></div>
+            <div class="form-container">
+                <form action="#" id="login-form" class="form-section active">
+                    <h2>Login</h2>
+                    <div class="input-box"><span class="icon"><ion-icon name="mail"></ion-icon></span><input type="email" id="login-email" required><label>Email</label><div class="input-line"></div></div>
+                    <div class="input-box"><span class="icon"><ion-icon name="lock-closed"></ion-icon></span><input type="password" id="login-pass" required><label>Password</label><div class="input-line"></div></div>
+                    <div class="remember-forgot"><label class="checkbox-wrapper"><input type="checkbox" id="remember-me"><span class="checkmark"></span> Remember me</label><a href="#" onclick="showForgot()">Forgot Password?</a></div>
+                    <button type="submit" id="btn-login" class="auth-btn" onclick="handleLogin(event)">Login</button>
+                    <div id="login-error" class="error-msg"></div>
+                    <div class="register-link"><p>Don't have an account? <a href="#" onclick="showRegister()">Register</a></p></div>
+                </form>
+                <form action="#" id="register-form" class="form-section">
+                    <h2>Register</h2>
+                    <div class="input-box"><span class="icon"><ion-icon name="mail"></ion-icon></span><input type="email" id="signup-email" required><label>Email</label><div class="input-line"></div></div>
+                    <div class="input-box"><span class="icon"><ion-icon name="lock-closed"></ion-icon></span><input type="password" id="signup-pass" required><label>Password (Min 6 chars)</label><div class="input-line"></div></div>
+                    <button type="submit" id="btn-register" class="auth-btn" onclick="handleSignup(event)">Register</button>
+                    <div id="signup-error" class="error-msg"></div>
+                    <div class="register-link"><p>Already have an account? <a href="#" onclick="showLogin()">Login</a></p></div>
+                </form>
+                <form action="#" id="forgot-form" class="form-section">
+                    <h2>Reset Password</h2>
+                    <div class="input-box"><span class="icon"><ion-icon name="mail"></ion-icon></span><input type="email" id="reset-email" required><label>Enter your email</label><div class="input-line"></div></div>
+                    <button type="submit" id="btn-reset" class="auth-btn" onclick="handleReset(event)">Send Reset Link</button>
+                    <div id="forgot-error" class="error-msg"></div>
+                    <div class="register-link"><p>Back to <a href="#" onclick="showLogin()">Login</a></p></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOUT MODAL -->
+    <div class="logout-modal-overlay" id="logout-modal">
+        <div class="logout-modal">
+            <h3>Log Out?</h3>
+            <p>Are you sure you want to exit the app?</p>
+            <div class="logout-actions">
+                <button class="logout-btn btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <button class="logout-btn btn-confirm" onclick="confirmLogout()">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP INTERFACE -->
+    <div id="app-interface" style="display: none;">
+        <header>
+            <div class="menu-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+            <div class="app-title">SCORE-X   </div>
+        </header>
+
+        <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <!-- LOGO ONLY - MENU TEXT REMOVED -->
+                <img src="https://i.postimg.cc/t472R0LN/Picsart-26-01-02-09-26-33-406.jpg" alt="Logo">
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="https://t.me/CYBER_SCORE" target="_blank"><i class="fab fa-telegram"></i> Admin Contact </a></li>
+                <li><a href="#" onclick="openLogoutModal()"><i class="fas fa-sign-out-alt"></i> Log Out</a></li>
+            </ul>
+        </nav>
+
+        <div class="main-content">
+            <div id="home-view" class="page-view active">
+                <div class="home-grid">
+                    <div class="home-btn" onclick="showPage('free')"><i class="fas fa-gift"></i><span> SURE 2+ ODDS </span></div>
+                    <!-- BUTTON SWAPPED: JOIN GROUP IS NOW HERE -->
+                    <div class="home-btn" onclick="window.open('https://t.me/BuyBet_Tips')"><i class="fab fa-whatsapp"></i><span> JOIN CHANNEL </span></div>
+                    
+                    <div class="home-btn" onclick="showPage('htft-vip')"><i class="fas fa-futbol"></i><span>HT/FT VIP</span></div>
+                    <div class="home-btn" onclick="showPage('htft-history')"><i class="fas fa-clipboard-list"></i><span>HT/FT HISTORY</span></div>
+                    
+                    <!-- BUTTON SWAPPED: VIP IS NOW HERE -->
+                    <div class="home-btn" onclick="showPage('vip')"><i class="fas fa-crown"></i><span> FIXED 6+ ODDS VIP</span></div>
+                    
+                    <div class="home-btn" onclick="showPage('history')"><i class="fas fa-history"></i><span> 6+ ODDS VIP HISTORY </span></div>
+                </div>
+            </div>
+            <div id="free-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 5px;"><h4 style="margin:0; font-size: 14px;"> SURE 2+ ODDS </h4></div>
+                <div id="dynamic-content"><p style="text-align: center; margin-top: 50px;">Loading Free Tips...</p></div>
+            </div>
+            <div id="vip-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 5px;"><h4 style="margin:0; font-size:16px;"> FIXED 6+ ODDS VIP </h4></div>
+                <div id="vip-dynamic-content"><p style="text-align: center; margin-top: 50px;">Checking VIP Access...</p></div>
+            </div>
+            
+            <div id="htft-vip-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 5px;"><h4 style="margin:0; font-size:16px;"> HT-FT VIP </h4></div>
+                <div id="htft-vip-dynamic-content"><p style="text-align: center; margin-top: 50px;">Checking Access...</p></div>
+            </div>
+            <div id="htft-history-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 10px;"><h4 style="margin:0; font-size:16px;"> HT-FT VIP HISTORY</h4></div>
+                <div id="htft-history-list"><p style="text-align: center; margin-top: 50px;">Loading History...</p></div>
+            </div>
+
+            <div id="history-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 10px;"><h4 style="margin:0; font-size:16px;"> FIXED 6+ ODDS VIP HISTORY </h4></div>
+                <div id="history-list"><p style="text-align: center; margin-top: 50px;">Loading History...</p></div>
+            </div>
+            <div id="privacy-view" class="page-view">
+                <div style="text-align: center; margin-bottom: 10px;"><h4 style="margin:0; font-size:14px;">Privacy Policy</h4></div>
+                <div class="privacy-content"><h3 style="margin-top:0;">Privacy Policy</h3><p>Welcome to SCOREX. By using this app, you agree to our terms.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyCBdbY1QFCFIX1AvQQJBODbDbVRPOAraE0", authDomain: "scorex-69774.firebaseapp.com", databaseURL: "https://scorex-69774-default-rtdb.firebaseio.com", projectId: "scorex-69774", storageBucket: "scorex-69774.firebasestorage.app", messagingSenderId: "310053122078", appId: "1:310053122078:web:2e1f2866f5744a44acfe0f", measurementId: "G-SVH1W9Q1JT" };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const auth = firebase.auth(); const db = firebase.database();
+        const splash = document.getElementById('splash');
+        const hideSplash = () => { splash.classList.add('hide'); setTimeout(() => { splash.style.display = 'none'; }, 900); };
+        const minSplashTime = new Promise(resolve => setTimeout(resolve, 2500));
+        const iconWon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="14"><title>check-decagram</title><path d="M23,12L20.56,9.22L20.9,5.54L17.29,4.72L15.4,1.54L12,3L8.6,1.54L6.71,4.72L3.1,5.53L3.44,9.21L1,12L3.44,14.78L3.1,18.47L6.71,19.29L8.6,22.47L12,21L15.4,22.46L17.29,19.28L20.9,18.46L20.56,14.78L23,12M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z" fill="white"></path></svg>`;
+        const iconPending = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="14"><title>clock-outline</title><path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z" fill="white"></path></svg>`;
+        const iconLost = `✖`;
+        const mainBox = document.getElementById('main-box');
+        mainBox.addEventListener('focusin', () => mainBox.classList.add('light-on'));
+        mainBox.addEventListener('focusout', (e) => { setTimeout(() => { if(!mainBox.contains(document.activeElement)) mainBox.classList.remove('light-on'); }, 100); });
+        function getTodayDate() { return new Date().toISOString().split('T')[0]; }
+        function recordAppView(uid) { const today = getTodayDate(); const key = `view_app_${today}_${uid}`; if (!localStorage.getItem(key)) { db.ref(`userViews/${today}/uniqueUserIds/${uid}`).set(true).then(() => localStorage.setItem(key, 'true')).catch(e => console.error(e)); } }
+        function recordSectionView(uid, section) { const today = getTodayDate(); const key = `view_${section}_${today}_${uid}`; if (!localStorage.getItem(key)) { db.ref(`sectionViews/${today}/${section}/${uid}`).set(true).then(() => localStorage.setItem(key, 'true')).catch(e => console.error(e)); } }
+        auth.onAuthStateChanged(user => { minSplashTime.then(() => { hideSplash(); if (user) { document.getElementById('auth-view').style.display = 'none'; document.getElementById('app-interface').style.display = 'block'; showPage('home'); loadAppData(user.uid); recordAppView(user.uid); } else { document.getElementById('auth-view').style.display = 'flex'; document.getElementById('app-interface').style.display = 'none'; showLogin(); } }); });
+        function showError(id, msg) { const el = document.getElementById(id); el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000); }
+        function getFriendlyError(code) { if(code === 'auth/user-not-found') return "Account not found."; if(code === 'auth/wrong-password') return "Incorrect password."; return "Login failed. Try again."; }
+        function handleLogin(e) { e.preventDefault(); const email = document.getElementById('login-email').value; const pass = document.getElementById('login-pass').value; const remember = document.getElementById('remember-me').checked; const btn = document.getElementById('btn-login'); if(!email || !pass) return showError('login-error', "Fill all fields"); btn.classList.add('loading'); const persistence = remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; auth.setPersistence(persistence).then(() => auth.signInWithEmailAndPassword(email, pass)).then(() => btn.classList.remove('loading')).catch((err) => { btn.classList.remove('loading'); showError('login-error', getFriendlyError(err.code)); }); }
+        function handleSignup(e) { e.preventDefault(); const email = document.getElementById('signup-email').value; const pass = document.getElementById('signup-pass').value; const btn = document.getElementById('btn-register'); if(!email || !pass) return showError('signup-error', "Fill all fields"); btn.classList.add('loading'); auth.createUserWithEmailAndPassword(email, pass).then((cred) => { return db.ref('users/'+cred.user.uid).set({ email: email, uid: cred.user.uid }); }).then(() => btn.classList.remove('loading')).catch((err) => { btn.classList.remove('loading'); showError('signup-error', getFriendlyError(err.code)); }); }
+        function handleReset(e) { e.preventDefault(); const email = document.getElementById('reset-email').value; const btn = document.getElementById('btn-reset'); if(!email) return showError('forgot-error', "Enter email"); btn.classList.add('loading'); auth.sendPasswordResetEmail(email).then(() => { btn.classList.remove('loading'); alert("Reset link sent!"); showLogin(); }).catch(err => { btn.classList.remove('loading'); showError('forgot-error', "Error sending link"); }); }
+        const lf = document.getElementById('login-form'); const rf = document.getElementById('register-form'); const ff = document.getElementById('forgot-form');
+        function showRegister() { lf.classList.remove('active'); ff.classList.remove('active'); rf.classList.add('active'); }
+        function showLogin() { rf.classList.remove('active'); ff.classList.remove('active'); lf.classList.add('active'); }
+        function showForgot() { lf.classList.remove('active'); rf.classList.remove('active'); ff.classList.add('active'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+        function openLogoutModal() { document.getElementById('sidebar').classList.remove('active'); document.getElementById('overlay').classList.remove('active'); document.getElementById('logout-modal').style.display = 'flex'; }
+        function closeLogoutModal() { document.getElementById('logout-modal').style.display = 'none'; }
+        function confirmLogout() { auth.signOut().then(() => closeLogoutModal()); }
+        function showPage(pageId) { if (pageId !== 'home') window.history.pushState({page: pageId}, "", "#" + pageId); renderPage(pageId); if(pageId === 'free' && auth.currentUser) recordSectionView(auth.currentUser.uid, 'free'); }
+        function renderPage(pageId) { document.getElementById('sidebar').classList.remove('active'); document.getElementById('overlay').classList.remove('active'); document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active')); document.getElementById(pageId + '-view').classList.add('active'); }
+        function goBack() { if(window.history.state) window.history.back(); else renderPage('home'); }
+        window.onpopstate = function(e) { if(e.state) renderPage(e.state.page); else renderPage('home'); };
+        function loadAppData(uid) {
+            function renderTable(data, containerId, msg) {
+                const c = document.getElementById(containerId); if(!data) { c.innerHTML = `<p style="text-align:center;margin-top:50px;">${msg}</p>`; return; }
+                const tips = Object.values(data); tips.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const grouped = {}; tips.forEach(t => { const d = t.date || "Upcoming"; if(!grouped[d]) grouped[d] = []; grouped[d].push(t); });
+                const dates = Object.keys(grouped).sort((a,b) => (grouped[b][0].timestamp||0) - (grouped[a][0].timestamp||0));
+                let html = '';
+                dates.forEach(d => {
+                    const dailyTips = grouped[d];
+                    for (let i = 0; i < dailyTips.length; i += 2) {
+                        const chunk = dailyTips.slice(i, i + 2);
+                        let totalOdds = 1; let hasLost = false; let hasPending = false;
+                        chunk.forEach(t => { let oddVal = parseFloat(t.odds); if(!isNaN(oddVal)) { totalOdds *= oddVal; } if(t.status === 'lost') { hasLost = true; } else if (t.status !== 'won') { hasPending = true; } });
+                        let totalStatusIcon = ''; if (hasLost) { totalStatusIcon = `<span class="status-lost">${iconLost}</span>`; } else if (hasPending) { totalStatusIcon = iconPending; } else { totalStatusIcon = iconWon; }
+                        let totalOddsStr = totalOdds.toFixed(2); if(totalOdds < 10) totalOddsStr = "0" + totalOddsStr;
+                        html += `<div class="table-container"><h6><b>${d}</b></h6><table><thead><tr><th class="home-away">Home/Away</th><th class="scores">Pick</th><th class="odds">Odds</th><th class="ft">FT</th></tr></thead><tbody>`;
+                        chunk.forEach(t => { let st = t.status==='won'?iconWon:(t.status==='lost'?`<span class="status-lost">${iconLost}</span>`:iconPending); const matchName = t.homeTeam + " - " + t.awayTeam; html += `<tr><td class="home-away">${matchName}</td><td class="scores">${t.pick}</td><td class="odds">${t.odds}</td><td class="ft">${st}</td></tr>`; });
+                        html += `<tr class="total-row"><td colspan="2" class="total-label">Total Odds</td><td class="total-value">${totalOddsStr}</td><td class="total-ft">${totalStatusIcon}</td></tr>`;
+                        html += `</tbody></table></div>`;
+                    }
+                });
+                c.innerHTML = html;
+            }
+            db.ref('publicTips').off(); db.ref('publicTips').on('value', (s) => renderTable(s.val(), 'dynamic-content', 'No Free Tips.'));
+            const vipContainer = document.getElementById('vip-dynamic-content');
+            const htftVipContainer = document.getElementById('htft-vip-dynamic-content');
+
+            db.ref('vipAccess/' + uid).on('value', (accessSnap) => {
+                const accessData = accessSnap.val();
+                
+                // --- LOGIC UPDATED FOR NEW PLANS (PLAN_FIXED & PLAN_HTFT) ---
+                let hasFixedPlan = false;
+                let hasHtftPlan = false;
+
+                if (accessData) {
+                    if (accessData.PLAN_FIXED && accessData.PLAN_FIXED.expiryTimestamp > Date.now()) {
+                        hasFixedPlan = true;
+                    }
+                    if (accessData.PLAN_HTFT && accessData.PLAN_HTFT.expiryTimestamp > Date.now()) {
+                        hasHtftPlan = true;
+                    }
+                }
+                
+                const lockedHTML = `<div style="text-align:center; padding:30px;"><i class="fas fa-lock" style="font-size:40px; color:#ffcc00; margin-bottom:15px;"></i><h3>LOCKED</h3><p>Buy subscription to view VIP tips.</p><button style="padding:10px 20px; border-radius:20px; border:none; background:#25D366; color:white; font-weight:bold; margin-top:10px;" onclick="window.open('https://t.me/CYBER_SCORE')">Contact Admin</button></div>`;
+
+                // 1. ORIGINAL VIP TIPS (FIXED)
+                db.ref('vipTips').off(); 
+                if (hasFixedPlan) {
+                    db.ref('vipTips').on('value', (s) => { 
+                        if(s.exists()) { renderTable(s.val(), 'vip-dynamic-content', 'No VIP Tips.'); recordSectionView(uid, 'vip'); } 
+                        else { vipContainer.innerHTML = '<p style="text-align:center;margin-top:50px;">No VIP data.</p>'; } 
+                    });
+                } else {
+                    vipContainer.innerHTML = lockedHTML;
+                }
+                
+                // 2. NEW HT-FT VIP TIPS
+                db.ref('htftTips').off();
+                if (hasHtftPlan) {
+                    db.ref('htftTips').on('value', (s) => {
+                        if(s.exists()) { renderTable(s.val(), 'htft-vip-dynamic-content', 'No HT-FT Tips.'); recordSectionView(uid, 'htft_vip'); }
+                        else { htftVipContainer.innerHTML = '<p style="text-align:center;margin-top:50px;">No HT-FT data.</p>'; }
+                    });
+                } else {
+                    htftVipContainer.innerHTML = lockedHTML;
+                }
+            });
+
+            // ORIGINAL HISTORY
+            db.ref('history').off(); db.ref('history').orderByChild('timestamp').limitToLast(50).on('value', (s) => {
+                const c = document.getElementById('history-list'); if(!s.exists()) { c.innerHTML = '<p style="text-align:center;margin-top:50px;">No history.</p>'; return; }
+                const data = s.val(); let tips = Object.values(data); tips.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const grouped = {}; tips.forEach(t => { const d = t.date || "Archive"; if(!grouped[d]) grouped[d] = []; grouped[d].push(t); });
+                const dates = Object.keys(grouped).sort((a,b) => (grouped[b][0].timestamp||0) - (grouped[a][0].timestamp||0));
+                let html = '';
+                dates.forEach(d => {
+                    const dailyTips = grouped[d];
+                    for (let i = 0; i < dailyTips.length; i += 2) {
+                        const chunk = dailyTips.slice(i, i + 2);
+                        let totalOdds = 1; let hasLost = false; let hasPending = false;
+                        chunk.forEach(t => { let oddVal = parseFloat(t.odds); if(!isNaN(oddVal)) totalOdds *= oddVal; if(t.status === 'lost') hasLost = true; else if (t.status !== 'won') hasPending = true; });
+                        let totalStatusIcon = ''; if (hasLost) totalStatusIcon = `<span class="status-lost">${iconLost}</span>`; else if (hasPending) totalStatusIcon = iconPending; else totalStatusIcon = iconWon;
+                        let totalOddsStr = totalOdds.toFixed(2); if(totalOdds < 10) totalOddsStr = "0" + totalOddsStr;
+                        html += `<div class="table-container"><h6><b>${d}</b></h6><table><thead><tr><th class="home-away">Home/Away</th><th class="scores">Pick</th><th class="odds">Odds</th><th class="ft">FT</th></tr></thead><tbody>`;
+                        chunk.forEach(t => { let st = t.status==='won'?iconWon:(t.status==='lost'?`<span class="status-lost">${iconLost}</span>`:iconPending); const matchName = t.homeTeam + " - " + t.awayTeam; html += `<tr><td class="home-away">${matchName}</td><td class="scores">${t.pick}</td><td class="odds">${t.odds}</td><td class="ft">${st}</td></tr>`; });
+                        html += `<tr class="total-row"><td colspan="2" class="total-label">Total Odds</td><td class="total-value">${totalOddsStr}</td><td class="total-ft">${totalStatusIcon}</td></tr>`;
+                        html += `</tbody></table></div><br>`;
+                    }
+                });
+                c.innerHTML = html;
+            });
+
+            // NEW HT-FT HISTORY
+            db.ref('htftHistory').off(); db.ref('htftHistory').orderByChild('timestamp').limitToLast(50).on('value', (s) => {
+                const c = document.getElementById('htft-history-list'); if(!s.exists()) { c.innerHTML = '<p style="text-align:center;margin-top:50px;">No HT-FT history.</p>'; return; }
+                const data = s.val(); let tips = Object.values(data); tips.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                const grouped = {}; tips.forEach(t => { const d = t.date || "Archive"; if(!grouped[d]) grouped[d] = []; grouped[d].push(t); });
+                const dates = Object.keys(grouped).sort((a,b) => (grouped[b][0].timestamp||0) - (grouped[a][0].timestamp||0));
+                let html = '';
+                dates.forEach(d => {
+                    const dailyTips = grouped[d];
+                    for (let i = 0; i < dailyTips.length; i += 2) {
+                        const chunk = dailyTips.slice(i, i + 2);
+                        let totalOdds = 1; let hasLost = false; let hasPending = false;
+                        chunk.forEach(t => { let oddVal = parseFloat(t.odds); if(!isNaN(oddVal)) totalOdds *= oddVal; if(t.status === 'lost') hasLost = true; else if (t.status !== 'won') hasPending = true; });
+                        let totalStatusIcon = ''; if (hasLost) totalStatusIcon = `<span class="status-lost">${iconLost}</span>`; else if (hasPending) totalStatusIcon = iconPending; else totalStatusIcon = iconWon;
+                        let totalOddsStr = totalOdds.toFixed(2); if(totalOdds < 10) totalOddsStr = "0" + totalOddsStr;
+                        html += `<div class="table-container"><h6><b>${d}</b></h6><table><thead><tr><th class="home-away">Home/Away</th><th class="scores">Pick</th><th class="odds">Odds</th><th class="ft">FT</th></tr></thead><tbody>`;
+                        chunk.forEach(t => { let st = t.status==='won'?iconWon:(t.status==='lost'?`<span class="status-lost">${iconLost}</span>`:iconPending); const matchName = t.homeTeam + " - " + t.awayTeam; html += `<tr><td class="home-away">${matchName}</td><td class="scores">${t.pick}</td><td class="odds">${t.odds}</td><td class="ft">${st}</td></tr>`; });
+                        html += `<tr class="total-row"><td colspan="2" class="total-label">Total Odds</td><td class="total-value">${totalOddsStr}</td><td class="total-ft">${totalStatusIcon}</td></tr>`;
+                        html += `</tbody></table></div><br>`;
+                    }
+                });
+                c.innerHTML = html;
+            });
+        }
+    </script>
+</body>
+</html>
